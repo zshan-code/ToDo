@@ -85,6 +85,7 @@ def create_task(request):
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 @require_http_methods(["PUT"])
+@csrf_exempt
 def update_task(request, task_id):
     """Update an existing task"""
     try:
@@ -113,6 +114,7 @@ def update_task(request, task_id):
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 @require_http_methods(["PATCH"])
+@csrf_exempt
 def toggle_task_completion(request, task_id):
     """Toggle task completion status"""
     try:
@@ -128,6 +130,7 @@ def toggle_task_completion(request, task_id):
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 @require_http_methods(["DELETE"])
+@csrf_exempt
 def delete_task(request, task_id):
     """Delete a task"""
     try:
