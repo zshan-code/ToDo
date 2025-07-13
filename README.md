@@ -41,9 +41,19 @@ Set these environment variables in your Vercel project settings:
 ### Database Setup
 
 For production, use a PostgreSQL database service like:
-- Supabase (https://supabase.com)
-- Railway (https://railway.app)
-- Render (https://render.com)
+- **Railway** (https://railway.app) - Recommended for Vercel
+- **Render** (https://render.com) - Good alternative
+- **ElephantSQL** (https://elephantsql.com) - Free tier available
+- **Supabase** (https://supabase.com) - May have connectivity issues with Vercel
+
+### Quick Database Setup (Railway)
+
+1. Go to https://railway.app
+2. Sign up with GitHub
+3. Create a new project
+4. Add a PostgreSQL database
+5. Copy the connection string
+6. Set it as `DATABASE_URL` in Vercel
 
 ### Health Check
 
@@ -68,4 +78,10 @@ If you get 500 errors on Vercel:
 1. Check that all environment variables are set
 2. Verify the database connection string
 3. Check Vercel function logs for specific errors
-4. Test the health endpoint for detailed error information 
+4. Test the health endpoint for detailed error information
+
+### Common Issues
+
+- **"Cannot assign requested address"** - Database connectivity issue, try a different database service
+- **"ModuleNotFoundError"** - Missing dependencies in requirements.txt
+- **"CSRF verification failed"** - Missing CSRF_TRUSTED_ORIGINS setting 
