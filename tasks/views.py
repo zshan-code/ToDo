@@ -137,6 +137,13 @@ def delete_task(request, task_id):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
+def test_endpoint(request):
+    """Simple test endpoint to verify Django is working"""
+    return JsonResponse({
+        'status': 'Django is running',
+        'message': 'This endpoint works without database connection'
+    })
+
 def health_check(request):
     """Health check endpoint to test if Django and database are working"""
     try:
