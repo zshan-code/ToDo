@@ -28,6 +28,10 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-+5ue^_@@l82s!q
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
+# Add debugging for Vercel
+print(f"DEBUG setting: {DEBUG}")
+print(f"DATABASE_URL present: {bool(os.environ.get('DATABASE_URL'))}")
+
 ALLOWED_HOSTS = ['.vercel.app', 'localhost', '127.0.0.1']
 CSRF_TRUSTED_ORIGINS = [
     'https://to-2g0clw1s6-zshan-codes-projects.vercel.app'
