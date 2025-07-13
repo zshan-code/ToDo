@@ -4,6 +4,7 @@ from django.views.decorators.http import require_http_methods
 import json
 from datetime import datetime
 from .models import Task
+from django.views.decorators.csrf import csrf_exempt
 
 def index(request):
     """Main page view"""
@@ -27,6 +28,7 @@ def get_tasks(request):
     return JsonResponse({'tasks': tasks_data})
 
 @require_http_methods(["POST"])
+@csrf_exempt
 def create_task(request):
     """Create a new task"""
     try:

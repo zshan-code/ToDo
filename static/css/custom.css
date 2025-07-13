@@ -250,7 +250,7 @@ input[type="checkbox"]:focus {
     filter: invert(1);
 }
 
-/* Animation for task completion */
+/* Animation for task completion */ 
 .task-item.completed {
     animation: completeTask 0.5s ease-in-out;
 }
