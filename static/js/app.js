@@ -3,6 +3,12 @@ let currentTaskId = null;
 let tasks = [];
 let isDarkMode = localStorage.getItem('darkMode') === 'true';
 
+// API base path (support Vercel routing)
+let API_BASE = '/api';
+if (window.location.pathname.startsWith('/api/index.py')) {
+    API_BASE = '/api/index.py/api';
+}
+
 // CSRF token helper
 function getCookie(name) {
     let cookieValue = null;
@@ -20,28 +26,35 @@ function getCookie(name) {
 }
 const csrftoken = getCookie('csrftoken');
 
-// DOM elements
-const addTaskBtn = document.getElementById('addTaskBtn');
-const taskForm = document.getElementById('taskForm');
-const newTaskForm = document.getElementById('newTaskForm');
-const cancelBtn = document.getElementById('cancelBtn');
-const tasksList = document.getElementById('tasksList');
-const taskCount = document.getElementById('taskCount');
-const confirmationModal = document.getElementById('confirmationModal');
-const modalTitle = document.getElementById('modalTitle');
-const modalMessage = document.getElementById('modalMessage');
-const modalYes = document.getElementById('modalYes');
-const modalNo = document.getElementById('modalNo');
-const editModal = document.getElementById('editModal');
-const editTaskForm = document.getElementById('editTaskForm');
-const closeEditModal = document.getElementById('closeEditModal');
-const cancelEditBtn = document.getElementById('cancelEditBtn');
-const toast = document.getElementById('toast');
-const toastMessage = document.getElementById('toastMessage');
-const toastIcon = document.getElementById('toastIcon');
-const darkModeToggle = document.getElementById('darkModeToggle');
-const sunIcon = document.getElementById('sunIcon');
-const moonIcon = document.getElementById('moonIcon');
+// DOM elements (check for null)
+function getEl(id) {
+    const el = document.getElementById(id);
+    if (!el) {
+        console.error('Element not found:', id);
+    }
+    return el;
+}
+const addTaskBtn = getEl('addTaskBtn');
+const taskForm = getEl('taskForm');
+const newTaskForm = getEl('newTaskForm');
+const cancelBtn = getEl('cancelBtn');
+const tasksList = getEl('tasksList');
+const taskCount = getEl('taskCount');
+const confirmationModal = getEl('confirmationModal');
+const modalTitle = getEl('modalTitle');
+const modalMessage = getEl('modalMessage');
+const modalYes = getEl('modalYes');
+const modalNo = getEl('modalNo');
+const editModal = getEl('editModal');
+const editTaskForm = getEl('editTaskForm');
+const closeEditModal = getEl('closeEditModal');
+const cancelEditBtn = getEl('cancelEditBtn');
+const toast = getEl('toast');
+const toastMessage = getEl('toastMessage');
+const toastIcon = getEl('toastIcon');
+const darkModeToggle = getEl('darkModeToggle');
+const sunIcon = getEl('sunIcon');
+const moonIcon = getEl('moonIcon');
 
 // Initialize the app
 document.addEventListener('DOMContentLoaded', function() {
@@ -82,58 +95,88 @@ function toggleDarkMode() {
 // Setup event listeners
 function setupEventListeners() {
     // Add task button
-    addTaskBtn.addEventListener('click', toggleTaskForm);
+    if (addTaskBtn) {
+        addTaskBtn.addEventListener('click', toggleTaskForm);
+    }
     
     // Cancel button
-    cancelBtn.addEventListener('click', toggleTaskForm);
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', toggleTaskForm);
+    }
     
     // New task form
-    newTaskForm.addEventListener('submit', handleCreateTask);
+    if (newTaskForm) {
+        newTaskForm.addEventListener('submit', handleCreateTask);
+    }
     
     // Modal buttons
-    modalNo.addEventListener('click', hideConfirmationModal);
+    if (modalNo) {
+        modalNo.addEventListener('click', hideConfirmationModal);
+    }
     
     // Edit modal
-    closeEditModal.addEventListener('click', hideEditModal);
-    cancelEditBtn.addEventListener('click', hideEditModal);
-    editTaskForm.addEventListener('submit', handleUpdateTask);
+    if (closeEditModal) {
+        closeEditModal.addEventListener('click', hideEditModal);
+    }
+    if (cancelEditBtn) {
+        cancelEditBtn.addEventListener('click', hideEditModal);
+    }
+    if (editTaskForm) {
+        editTaskForm.addEventListener('submit', handleUpdateTask);
+    }
     
     // Dark mode toggle
-    darkModeToggle.addEventListener('click', toggleDarkMode);
+    if (darkModeToggle) {
+        darkModeToggle.addEventListener('click', toggleDarkMode);
+    }
     
     // Close modals on outside click
-    confirmationModal.addEventListener('click', function(e) {
-        if (e.target === confirmationModal) {
-            hideConfirmationModal();
-        }
-    });
+    if (confirmationModal) {
+        confirmationModal.addEventListener('click', function(e) {
+            if (e.target === confirmationModal) {
+                hideConfirmationModal();
+            }
+        });
+    }
     
-    editModal.addEventListener('click', function(e) {
-        if (e.target === editModal) {
-            hideEditModal();
-        }
-    });
+    if (editModal) {
+        editModal.addEventListener('click', function(e) {
+            if (e.target === editModal) {
+                hideEditModal();
+            }
+        });
+    }
 }
 
 // Set default date to today
 function setDefaultDate() {
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('dueDate').value = today;
+    const dueDateInput = document.getElementById('dueDate');
+    if (dueDateInput) {
+        dueDateInput.value = today;
+    }
 }
 
 // Toggle task form visibility
 function toggleTaskForm() {
-    taskForm.classList.toggle('hidden');
-    if (!taskForm.classList.contains('hidden')) {
-        newTaskForm.reset();
-        setDefaultDate();
+    if (taskForm) {
+        taskForm.classList.toggle('hidden');
+        if (!taskForm.classList.contains('hidden')) {
+            if (newTaskForm) {
+                newTaskForm.reset();
+            }
+            setDefaultDate();
+        }
     }
 }
 
 // Load all tasks
 async function loadTasks() {
     try {
-        const response = await fetch('/api/tasks/');
+        const response = await fetch(`${API_BASE}/tasks/`);
+        if (!response.ok) {
+            throw new Error('API response not ok: ' + response.status);
+        }
         const data = await response.json();
         tasks = data.tasks;
         renderTasks();
@@ -146,6 +189,11 @@ async function loadTasks() {
 
 // Render tasks in the list
 function renderTasks() {
+    if (!tasksList) {
+        console.error('tasksList element not found');
+        return;
+    }
+
     if (tasks.length === 0) {
         tasksList.innerHTML = `
             <div class="p-8 text-center">
@@ -223,14 +271,16 @@ async function handleTaskCompletion(taskId, isCompleted) {
         message,
         async () => {
             try {
-                const response = await fetch(`/api/tasks/${taskId}/toggle/`, {
+                const response = await fetch(`${API_BASE}/tasks/${taskId}/toggle/`, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': csrftoken,
                     }
                 });
-                
+                if (!response.ok) {
+                    throw new Error('API response not ok: ' + response.status);
+                }
                 const data = await response.json();
                 if (data.success) {
                     await loadTasks();
@@ -253,14 +303,16 @@ function handleDeleteTask(taskId) {
         'Are you sure you want to delete this task?',
         async () => {
             try {
-                const response = await fetch(`/api/tasks/${taskId}/delete/`, {
+                const response = await fetch(`${API_BASE}/tasks/${taskId}/delete/`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': csrftoken,
                     }
                 });
-                
+                if (!response.ok) {
+                    throw new Error('API response not ok: ' + response.status);
+                }
                 const data = await response.json();
                 if (data.success) {
                     await loadTasks();
@@ -282,11 +334,26 @@ function handleEditTask(taskId) {
     if (!task) return;
     
     // Populate edit form
-    document.getElementById('editTaskId').value = task.id;
-    document.getElementById('editUserName').value = task.name;
-    document.getElementById('editTaskTitle').value = task.title;
-    document.getElementById('editTaskDescription').value = task.description;
-    document.getElementById('editDueDate').value = task.due_date;
+    const editTaskIdInput = document.getElementById('editTaskId');
+    if (editTaskIdInput) {
+        editTaskIdInput.value = task.id;
+    }
+    const editUserNameInput = document.getElementById('editUserName');
+    if (editUserNameInput) {
+        editUserNameInput.value = task.name;
+    }
+    const editTaskTitleInput = document.getElementById('editTaskTitle');
+    if (editTaskTitleInput) {
+        editTaskTitleInput.value = task.title;
+    }
+    const editTaskDescriptionInput = document.getElementById('editTaskDescription');
+    if (editTaskDescriptionInput) {
+        editTaskDescriptionInput.value = task.description;
+    }
+    const editDueDateInput = document.getElementById('editDueDate');
+    if (editDueDateInput) {
+        editDueDateInput.value = task.due_date;
+    }
     
     showEditModal();
 }
@@ -304,7 +371,7 @@ async function handleCreateTask(e) {
     };
     
     try {
-        const response = await fetch('/api/tasks/create/', {
+        const response = await fetch(`${API_BASE}/tasks/create/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -312,7 +379,9 @@ async function handleCreateTask(e) {
             },
             body: JSON.stringify(taskData)
         });
-        
+        if (!response.ok) {
+            throw new Error('API response not ok: ' + response.status);
+        }
         const data = await response.json();
         if (data.success) {
             await loadTasks();
@@ -341,7 +410,7 @@ async function handleUpdateTask(e) {
     };
     
     try {
-        const response = await fetch(`/api/tasks/${taskId}/update/`, {
+        const response = await fetch(`${API_BASE}/tasks/${taskId}/update/`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -349,7 +418,9 @@ async function handleUpdateTask(e) {
             },
             body: JSON.stringify(taskData)
         });
-        
+        if (!response.ok) {
+            throw new Error('API response not ok: ' + response.status);
+        }
         const data = await response.json();
         if (data.success) {
             await loadTasks();
@@ -366,34 +437,58 @@ async function handleUpdateTask(e) {
 
 // Show confirmation modal
 function showConfirmationModal(title, message, onConfirm) {
+    if (!modalTitle) {
+        console.error('modalTitle element not found');
+        return;
+    }
     modalTitle.textContent = title;
+    if (!modalMessage) {
+        console.error('modalMessage element not found');
+        return;
+    }
     modalMessage.textContent = message;
+    if (!confirmationModal) {
+        console.error('confirmationModal element not found');
+        return;
+    }
     confirmationModal.classList.add('show');
     
     // Store the confirmation callback
-    modalYes.onclick = () => {
-        hideConfirmationModal();
-        onConfirm();
-    };
+    if (modalYes) {
+        modalYes.onclick = () => {
+            hideConfirmationModal();
+            onConfirm();
+        };
+    }
 }
 
 // Hide confirmation modal
 function hideConfirmationModal() {
-    confirmationModal.classList.remove('show');
+    if (confirmationModal) {
+        confirmationModal.classList.remove('show');
+    }
 }
 
 // Show edit modal
 function showEditModal() {
-    editModal.classList.add('show');
+    if (editModal) {
+        editModal.classList.add('show');
+    }
 }
 
 // Hide edit modal
 function hideEditModal() {
-    editModal.classList.remove('show');
+    if (editModal) {
+        editModal.classList.remove('show');
+    }
 }
 
 // Update task count
 function updateTaskCount() {
+    if (!taskCount) {
+        console.error('taskCount element not found');
+        return;
+    }
     const completedCount = tasks.filter(task => task.is_completed).length;
     const totalCount = tasks.length;
     taskCount.textContent = `${completedCount} of ${totalCount} tasks completed`;
@@ -401,32 +496,48 @@ function updateTaskCount() {
 
 // Show toast notification
 function showToast(message, type = 'success') {
+    if (!toastMessage) {
+        console.error('toastMessage element not found');
+        return;
+    }
     toastMessage.textContent = message;
     
     // Set icon and colors based on type
+    if (!toastIcon) {
+        console.error('toastIcon element not found');
+        return;
+    }
     if (type === 'success') {
         toastIcon.innerHTML = `
             <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
             </svg>
         `;
-        toast.classList.remove('bg-red-50', 'border-red-200', 'dark:bg-red-900/20', 'dark:border-red-800');
-        toast.classList.add('bg-green-50', 'border-green-200', 'dark:bg-green-900/20', 'dark:border-green-800');
+        if (toast) {
+            toast.classList.remove('bg-red-50', 'border-red-200', 'dark:bg-red-900/20', 'dark:border-red-800');
+            toast.classList.add('bg-green-50', 'border-green-200', 'dark:bg-green-900/20', 'dark:border-green-800');
+        }
     } else {
         toastIcon.innerHTML = `
             <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
             </svg>
         `;
-        toast.classList.remove('bg-green-50', 'border-green-200', 'dark:bg-green-900/20', 'dark:border-green-800');
-        toast.classList.add('bg-red-50', 'border-red-200', 'dark:bg-red-900/20', 'dark:border-red-800');
+        if (toast) {
+            toast.classList.remove('bg-green-50', 'border-green-200', 'dark:bg-green-900/20', 'dark:border-green-800');
+            toast.classList.add('bg-red-50', 'border-red-200', 'dark:bg-red-900/20', 'dark:border-red-800');
+        }
     }
     
-    toast.classList.remove('hidden');
+    if (toast) {
+        toast.classList.remove('hidden');
+    }
     
     // Auto hide after 3 seconds
     setTimeout(() => {
-        toast.classList.add('hidden');
+        if (toast) {
+            toast.classList.add('hidden');
+        }
     }, 3000);
 }
 
