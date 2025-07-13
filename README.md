@@ -157,3 +157,73 @@ This project is open source and available under the MIT License.
 ## Support
 
 For support or questions, please open an issue in the repository. 
+
+---
+
+## How to Fix
+
+### 1. **Double-Check requirements.txt**
+
+Make sure your `requirements.txt` file is in the root of your project (the same directory as `manage.py` and `vercel.json`).
+
+It should contain:
+```
+Django==4.2.7
+dj-database-url
+psycopg2-binary
+# ...any other packages you use
+```
+
+### 2. **Commit and Push requirements.txt**
+
+```sh
+git add requirements.txt
+git commit -m "Ensure dj-database-url and psycopg2-binary are in requirements"
+git push
+```
+
+### 3. **Check Vercel Build Logs**
+
+- Go to your Vercel dashboard → Deployments → Click on the latest deployment.
+- In the build logs, you should see lines like:
+  ```
+  Installing requirements from requirements.txt
+  Collecting dj-database-url
+  ...
+  ```
+- If you do **not** see this, Vercel is not using your `requirements.txt` (maybe it's in the wrong directory).
+
+### 4. **If requirements.txt is in a Subfolder**
+
+If your Django project is in a subfolder (e.g., `backend/`), you need to tell Vercel to use that as the root.  
+- In your Vercel dashboard, set the **Root Directory** to the folder containing `requirements.txt`.
+
+### 5. **Add psycopg2-binary**
+
+If you are using PostgreSQL, also add:
+```
+psycopg2-binary
+```
+to your `requirements.txt`.
+
+---
+
+## **Summary Table**
+
+| Problem                                 | Solution                                 |
+|------------------------------------------|------------------------------------------|
+| ModuleNotFoundError: No module named 'dj_database_url' | Add `dj-database-url` to `requirements.txt` in the project root, commit, push, and redeploy |
+
+---
+
+## **What To Do Next**
+
+1. Make sure `requirements.txt` is in your project root and contains `dj-database-url`.
+2. Add `psycopg2-binary` if using PostgreSQL.
+3. Commit and push.
+4. Redeploy on Vercel.
+5. Check the build logs to confirm packages are installed.
+
+---
+
+**Once you do this, your import error will be fixed. If you see a new error, copy the new log here and I’ll help you fix it!** 
