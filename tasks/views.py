@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.core.cache import cache
 import json
 import logging
 from datetime import datetime
@@ -17,13 +18,17 @@ def index(request):
 
 @require_http_methods(["GET"])
 def get_tasks(request):
-    """Get all tasks"""
+    """Get all tasks with caching"""
     try:
-        # Test database connection
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT 1")
+        # Try to get from cache first
+        cache_key = 'all_tasks'
+        cached_tasks = cache.get(cache_key)
         
-        tasks = Task.objects.all()
+        if cached_tasks is not None:
+            return JsonResponse({'tasks': cached_tasks})
+        
+        # If not in cache, get from database
+        tasks = Task.objects.all().order_by('-created_at')
         tasks_data = []
         for task in tasks:
             tasks_data.append({
@@ -35,6 +40,10 @@ def get_tasks(request):
                 'is_completed': task.is_completed,
                 'created_at': task.created_at.strftime('%Y-%m-%d %H:%M:%S')
             })
+        
+        # Cache for 30 seconds
+        cache.set(cache_key, tasks_data, 30)
+        
         return JsonResponse({'tasks': tasks_data})
     except Exception as e:
         logger.error(f"Error in get_tasks: {str(e)}")
@@ -62,6 +71,10 @@ def create_task(request):
             description=data['description'],
             due_date=datetime.strptime(data['due_date'], '%Y-%m-%d').date()
         )
+        
+        # Invalidate cache
+        cache.delete('all_tasks')
+        
         return JsonResponse({
             'success': True,
             'task': {
@@ -98,6 +111,9 @@ def update_task(request, task_id):
         task.due_date = datetime.strptime(data['due_date'], '%Y-%m-%d').date()
         task.save()
         
+        # Invalidate cache
+        cache.delete('all_tasks')
+        
         return JsonResponse({
             'success': True,
             'task': {
@@ -122,6 +138,9 @@ def toggle_task_completion(request, task_id):
         task.is_completed = not task.is_completed
         task.save()
         
+        # Invalidate cache
+        cache.delete('all_tasks')
+        
         return JsonResponse({
             'success': True,
             'is_completed': task.is_completed
@@ -136,6 +155,10 @@ def delete_task(request, task_id):
     try:
         task = get_object_or_404(Task, id=task_id)
         task.delete()
+        
+        # Invalidate cache
+        cache.delete('all_tasks')
+        
         return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
